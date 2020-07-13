@@ -3,16 +3,36 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 .DELETE_ON_ERROR:
 
+
 MAKEFLAGS := $(MAKEFLAGS)
 MAKEFLAGS += --warn-undifined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
+
 
 ifeq ($(origin .RECIPEPREFIX), undifined)
   $(error This Make does not support .RECIPEPREFIX. Please use GNU Make 4.0 or later)
 else
   .RECIPEPREFIX = >
 endif
+
+NAME := program
+
+SOURCES_DIR := sources
+INCLUDE_DIR := include
+OBJECTS_DIR := objects
+
+SOURCES_SUB_DIR := $(shell find $(SOURCES_DIR) -type d)
+INCLUDE_SUB_DIR := $(patsubst $(SOURCES_DIR)%, $(INCLUDE_DIR)%, $(SOURCES_SUB_DIR))
+OBJECTS_SUB_DIR := $(patsubst $(SOURCES_DIR)%, $(OBJECTS_DIR)%, $(SOURCES_SUB_DIR))
+
+SOURCES := $(shell find $(SOURCES_DIR) -type f -name *.c)
+INCLUDE := $(patsubst $(SOURCES_DIR)/%.c, $(INCLUDE_DIR)/%.h, $(SOURCES))
+OBJECTS := $(patsubst $(SOURCES_DIR)/%.c, $(OBJECTS_DIR)/%.o, $(SOURCES))
+
+MKDIR := mkdir -p
+RM    := rm -f
+RMDIR := rm -fr
 
 CC := gcc
 
@@ -28,25 +48,9 @@ CFLAGS += -Werror -Wall -Wextra \
 CFLAGS += -g3 -Os -fstack-usage \
           -fdata-sections -ffunction-sections
 
+CFLAGS += -I $(INCLUDE_DIR)
+
 LDFLAGS := $(LDFLAGS)
-
-MKDIR := mkdir -p
-RM    := rm -f
-RMDIR := rm -fr
-
-SOURCES_DIR := sources
-INCLUDE_DIR := include
-OBJECTS_DIR := objects
-
-SOURCES_SUB_DIR := $(shell find $(SOURCES_DIR) -type d)
-INCLUDE_SUB_DIR := $(patsubst $(SOURCES_DIR)%, $(INCLUDE_DIR)%, $(SOURCES_SUB_DIR))
-OBJECTS_SUB_DIR := $(patsubst $(SOURCES_DIR)%, $(OBJECTS_DIR)%, $(SOURCES_SUB_DIR))
-
-SOURCES := $(shell find $(SOURCES_DIR) -type f -name *.c)
-INCLUDE := $(patsubst $(SOURCES_DIR)/%.c, $(INCLUDE_DIR)/%.h, $(SOURCES))
-OBJECTS := $(patsubst $(SOURCES_DIR)/%.c, $(OBJECTS_DIR)/%.o, $(SOURCES))
-
-NAME := program
 
 .PHONY: all
 all: $(NAME)
