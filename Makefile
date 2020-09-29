@@ -3,12 +3,10 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 .DELETE_ON_ERROR:
 
-
 MAKEFLAGS := $(MAKEFLAGS)
 MAKEFLAGS += --warn-undifined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
-
 
 ifeq ($(origin .RECIPEPREFIX), undifined)
   $(error This Make does not support .RECIPEPREFIX. Please use GNU Make 4.0 or later)
@@ -38,26 +36,37 @@ CC := gcc
 
 CFLAGS := $(CFLAGS)
 CFLAGS += -Werror -Wall -Wextra \
-          -Wconversion -Wdouble-promotion \
+          -Wno-missing-braces \
+          -Wno-missing-field-initializers \
+          -Wformat=2 -Wswitch-default \
+          -Wswitch-enum -Wcast-align \
+          -Wpointer-arith -Wbad-function-cast \
+          -Wstrict-overflow=5 -Wstrict-prototypes \
+          -Winline -Wundef -Wnested-externs \
+          -Wcast-qual -Wshadow \
+          -Wunreachable-code -Wlogical-op \
+          -Wfloat-equal -Wstrict-aliasing=2 \
+          -Wredundant-decls -Wold-style-definition \
+          -Werror -Wconversion -Wdouble-promotion \
           -Wduplicated-branches -Wduplicated-cond \
-          -Wformat-truncation -Wformat=2 \
-          -Wjump-misses-init -Wlogical-op \
+          -Wformat-truncation -Wjump-misses-init \
           -Wnull-dereference -Wrestrict \
-          -Wshadow -Wundef -fno-common
+          -fno-common -Wmissing-prototypes
 
-CFLAGS += -g3 -Os -fstack-usage \
-          -fdata-sections -ffunction-sections
+CFLAGS += -g3 -ggdb3 -Os -fstack-usage \
+          -fdata-sections -ffunction-sections \
+          -march=native
 
 CFLAGS += -I $(INCLUDE_DIR)
 
 LDFLAGS := $(LDFLAGS)
 
 .PHONY: all
-all: $(NAME)
-> @echo -e "\nCompilation done"
+all: $(init) $(NAME)
 
 $(NAME): $(OBJECTS_SUB_DIR) $(OBJECTS)
-> $(CC) $(OBJECTS) -o $(NAME) $(LDFLAGS)
+> @echo CC $@
+> @$(CC) $(OBJECTS) -o $(NAME) $(LDFLAGS)
 
 $(OBJECTS_SUB_DIR):
 > $(MKDIR) $(OBJECTS_DIR) $(OBJECTS_SUB_DIR)
@@ -83,4 +92,5 @@ fclean: clean
 re: fclean all
 
 $(OBJECTS_DIR)/%.o: $(SOURCES_DIR)/%.c
-> $(CC) -c $(CFLAGS)  $< -o $@
+> @echo CC $@
+> @$(CC) -c $(CFLAGS)  $< -o $@
