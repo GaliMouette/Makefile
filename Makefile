@@ -16,81 +16,68 @@ endif
 
 NAME := program
 
-SOURCES_DIR := sources
-INCLUDE_DIR := include
-OBJECTS_DIR := objects
-
-SOURCES_SUB_DIR := $(shell find $(SOURCES_DIR) -type d)
-INCLUDE_SUB_DIR := $(patsubst $(SOURCES_DIR)%, $(INCLUDE_DIR)%, $(SOURCES_SUB_DIR))
-OBJECTS_SUB_DIR := $(patsubst $(SOURCES_DIR)%, $(OBJECTS_DIR)%, $(SOURCES_SUB_DIR))
-
-SOURCES := $(shell find $(SOURCES_DIR) -type f -name *.c)
-INCLUDE := $(patsubst $(SOURCES_DIR)/%.c, $(INCLUDE_DIR)/%.h, $(SOURCES))
-OBJECTS := $(patsubst $(SOURCES_DIR)/%.c, $(OBJECTS_DIR)/%.o, $(SOURCES))
-
 MKDIR := mkdir -p
 RM    := rm -f
 RMDIR := rm -fr
+TOUCH := touch -a
+
+SOURCES_DIR := ./sources
+INCLUDE_DIR := ./include
+OBJECTS_DIR := ./objects
+
+SOURCES_SUB_DIRS := $(shell find $(SOURCES_DIR) -type d)
+OBJECTS_SUB_DIRS := $(SOURCES_SUB_DIRS:$(SOURCES_DIR)%=$(OBJECTS_DIR)%)
+
+SOURCES := $(shell find $(SOURCES_DIR) -type f -name "*.c")
+OBJECTS := $(SOURCES:$(SOURCES_DIR)/%.c=$(OBJECTS_DIR)/%.o)
+DEPS    := $(SOURCES:$(SOURCES_DIR)/%.c=$(OBJECTS_DIR)/%.d)
 
 CC := gcc
 
-CFLAGS := $(CFLAGS)
-CFLAGS += -Werror -Wall -Wextra \
-          -Wno-missing-braces \
-          -Wno-missing-field-initializers \
-          -Wformat=2 -Wswitch-default \
-          -Wswitch-enum -Wcast-align \
-          -Wpointer-arith -Wbad-function-cast \
-          -Wstrict-overflow=5 -Wstrict-prototypes \
-          -Winline -Wundef -Wnested-externs \
-          -Wcast-qual -Wshadow \
-          -Wunreachable-code -Wlogical-op \
-          -Wfloat-equal -Wstrict-aliasing=2 \
-          -Wredundant-decls -Wold-style-definition \
-          -Werror -Wconversion -Wdouble-promotion \
-          -Wduplicated-branches -Wduplicated-cond \
-          -Wformat-truncation -Wjump-misses-init \
-          -Wnull-dereference -Wrestrict \
-          -fno-common -Wmissing-prototypes
+C_DEPS      = -MT $(OBJECTS_DIR)/$*.o -MMD -MP -MF $(OBJECTS_DIR)/$*.d
+C_DEBUG     := -g3 -ggdb3
+C_OPTIMIZE  := -O0 -fdata-sections -ffunction-sections -march=native
+C_WARNINGS  := -Wall -Wextra -Wno-missing-braces \
+            -Wno-missing-field-initializers -Wformat=2 -Wswitch-default \
+            -Wswitch-enum -Wcast-align -Wpointer-arith -Wbad-function-cast \
+            -Wstrict-overflow=5 -Wstrict-prototypes -Winline -Wundef \
+            -Wnested-externs -Wcast-qual -Wshadow -Wunreachable-code \
+            -Wlogical-op -Wfloat-equal -Wstrict-aliasing=2 \
+            -Wredundant-decls -Wold-style-definition -Wconversion \
+            -Wdouble-promotion -Wduplicated-branches -Wduplicated-cond \
+            -Wformat-truncation -Wjump-misses-init -Wnull-dereference \
+            -Wrestrict -Wmissing-prototypes
 
-CFLAGS += -g3 -ggdb3 -Os -fstack-usage \
-          -fdata-sections -ffunction-sections \
-          -march=native
-
-CFLAGS += -I $(INCLUDE_DIR)
+CFLAGS := $(CFLAGS) $(C_DEBUG) $(C_OPTIMIZE) $(C_WARNINGS) -I $(INCLUDE_DIR)
 
 LDFLAGS := $(LDFLAGS)
 
 .PHONY: all
-all: $(init) $(NAME)
+all: $(NAME)
 
-$(NAME): $(OBJECTS_SUB_DIR) $(OBJECTS)
+$(NAME): $(OBJECTS)
+> @$(CC) $(LDFLAGS) $^ -o $@
 > @echo CC $@
-> @$(CC) $(OBJECTS) -o $(NAME) $(LDFLAGS)
 
-$(OBJECTS_SUB_DIR):
-> $(MKDIR) $(OBJECTS_DIR) $(OBJECTS_SUB_DIR)
+$(OBJECTS_DIR)/%.o: $(SOURCES_DIR)/%.c | $(OBJECTS_SUB_DIRS)
+> @$(CC) $(CFLAGS) $(C_DEPS) -c $< -o $@
+> @echo CC $@
 
-.PHONY: init
-init:
-> $(MKDIR) $(SOURCES_DIR) $(INCLUDE_DIR)
-
-.PHONY: update
-update:
-> $(MKDIR) $(INCLUDE_DIR) $(INCLUDE_SUB_DIR)
-> touch $(INCLUDE)
+$(OBJECTS_SUB_DIRS):
+> @$(MKDIR) $(OBJECTS_SUB_DIRS)
+> @echo MKDIR $(OBJECTS_SUB_DIRS)
 
 .PHONY: clean
 clean:
-> $(RMDIR) $(OBJECTS_DIR)
+> @$(RMDIR) $(OBJECTS_DIR)
+> @echo RMDIR $(OBJECTS_DIR)
 
 .PHONY: fclean
 fclean: clean
-> $(RM) $(NAME)
+> @$(RM) $(NAME)
+> @echo RM $(NAME)
 
 .PHONY: re
 re: fclean all
 
-$(OBJECTS_DIR)/%.o: $(SOURCES_DIR)/%.c
-> @echo CC $@
-> @$(CC) -c $(CFLAGS)  $< -o $@
+-include $(DEPS)
