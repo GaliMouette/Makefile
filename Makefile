@@ -56,7 +56,7 @@ LDFLAGS := $(LDFLAGS)
 all: $(NAME)
 
 $(NAME): $(OBJECTS)
-> @$(CC) $(LDFLAGS) $^ -o $@
+> @$(CC) $^ $(LDFLAGS) -o $@
 > @echo CC $@
 
 $(OBJECTS_DIR)/%.o: $(SOURCES_DIR)/%.c | $(OBJECTS_SUB_DIRS)
