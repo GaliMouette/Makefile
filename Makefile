@@ -4,11 +4,11 @@ SHELL := bash
 .DELETE_ON_ERROR:
 
 MAKEFLAGS := $(MAKEFLAGS)
-MAKEFLAGS += --warn-undifined-variables
+MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 
-ifeq ($(origin .RECIPEPREFIX), undifined)
+ifeq ($(origin .RECIPEPREFIX), undefined)
   $(error This Make does not support .RECIPEPREFIX. Please use GNU Make 4.0 or later)
 else
   .RECIPEPREFIX = >
