@@ -35,12 +35,16 @@ SOURCES_SUB_DIRS := $(shell find $(SOURCES_DIR) -type d)
 OBJECTS_SUB_DIRS := $(SOURCES_SUB_DIRS:$(SOURCES_DIR)%=$(OBJECTS_DIR)%)
 
 
-SOURCES := $(shell find $(SOURCES_DIR) -type f -name "*.c")
+ifeq ($(MAKECMDGOALS), tests_run)
+  SOURCES := $(shell find $(SOURCES_DIR) -type f -not -wholename "*/main.c" -name "*.c")
+else
+  SOURCES := $(shell find $(SOURCES_DIR) -type f -name "*.c")
+endif
 OBJECTS := $(SOURCES:$(SOURCES_DIR)/%.c=$(OBJECTS_DIR)/%.o)
 DEPS    := $(SOURCES:$(SOURCES_DIR)/%.c=$(OBJECTS_DIR)/%.d)
 
 
-TEST_SOURCES_DIR         := ./tests
+TEST_SOURCES_DIR := ./tests
 TEST_OBJECTS_DIR := ./tests_objects
 
 
@@ -56,7 +60,7 @@ ifeq ($(MAKECMDGOALS), tests_run)
   CC         := gcc
   C_WARNINGS := -Wall -Wextra
   CFLAGS     := -fprofile-arcs -ftest-coverage
-  LDFLAGS    := -lgcov --coverage -lcriterion
+  LDFLAGS    := -lgcov -lcriterion
 else
   CC         := clang
   C_WARNINGS := -Weverything
